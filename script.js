@@ -24,7 +24,12 @@ function operate(input)
             input.result = number1 * number2;
             break;
         case "÷":
-            input.result = number1 / number2;
+            if(number2!==0) input.result = number1 / number2;
+            else
+            {
+                displayOperation.textContent = "Error! you try to divide by 0. Please press Clear";
+                input.divideByZero = true;
+            } 
             break;
     }
 }
@@ -47,7 +52,12 @@ function processOperation(input)
         operate(input);
         input.operation.splice((operatorIndex-1),3,input.result);
     }
-    displayResult.textContent = input.result;
+    if(input.divideByZero)
+    {
+        displayResult.textContent = "";
+        input.divideByZero = false;
+    } 
+    else displayResult.textContent = input.operation[0];
     input.pastOperation = true;
 }
 
@@ -59,6 +69,8 @@ function Input()
     this.result = 0;
     this.operation = null;
     this.pastOperation = false;
+    this.divideByZero = false;
+    this.keyPressed = "";
 
     this.assign = operatorIndex =>
     {
@@ -72,7 +84,7 @@ function Input()
         if(!this.pastOperation) displayOperation.textContent += ` ${item.textContent} `;
         else
         {
-            displayOperation.textContent = `${this.result} ${item.textContent} `;
+            displayOperation.textContent = `${this.operation[0]} ${item.textContent} `;
             displayResult.textContent = "";
             this.pastOperation = false;
         } 
@@ -88,15 +100,50 @@ function Input()
             this.pastOperation = false;
         }
     }
+
+    this.assignKey = event=>
+    {
+        this.keyPressed = event.key;
+        const operators = ["+","-","*","/","x","÷"];
+        const numbers = ["1","2","3","4","5","6","7","8","9","0","."]
+        if(operators.includes(this.keyPressed))
+        {
+            if(this.keyPressed === "*") this.keyPressed = "x";
+            else if (this.keyPressed === "/") this.keyPressed = "÷";
+            if(!this.pastOperation) displayOperation.textContent += ` ${this.keyPressed} `;
+            else
+            {
+                displayOperation.textContent = `${this.operation[0]} ${this.keyPressed} `;
+                displayResult.textContent = "";
+                this.pastOperation = false;
+            } 
+        }
+        else if(numbers.includes(this.keyPressed))
+        {
+            if(!this.pastOperation) displayOperation.textContent += this.keyPressed;
+            else
+            {
+                displayOperation.textContent = this.keyPressed;
+                displayResult.textContent = "";
+                this.pastOperation = false;
+            }
+        }
+        else if(this.keyPressed === "Enter" ||this.keyPressed === "=")processOperation(this);
+        else if(this.keyPressed ==="Backspace")displayOperation.textContent = 
+        displayOperation.textContent.slice(0,displayOperation.textContent.length-1);
+    }
 }
 
 function calculator()
 {
     const input = new Input();
+    document.addEventListener("keydown",event => input.assignKey(event));
     operators.forEach(item => item.addEventListener("click",()=>input.inputOperator(item)));
     numbers.forEach(item => item.addEventListener("click",()=>input.inputNumber(item)));
     equalButton.addEventListener("click", ()=>processOperation(input));
     clearButton.addEventListener("click",()=>{
+        input.pastOperation = false;
+        input.result = 0;
         displayOperation.textContent = "";
         displayResult.textContent = "";
     });
